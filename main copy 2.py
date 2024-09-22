@@ -1,11 +1,9 @@
 from typing import Optional, List
 from fastapi import FastAPI, WebSocket
-import aiohttp
 from fastapi.responses import HTMLResponse
 from uvicorn import run
 from sqlmodel import SQLModel, create_engine, Field, Session, select
 from sqlalchemy.orm import sessionmaker
-import requests
 
 
 class Config:
@@ -84,23 +82,11 @@ def create_quote(item: Quote):
         return HTMLResponse(status_code=201, content="Created")
 
 
-async def fetch(url):
-    async with aiohttp.ClientSession() as client:
-        async with client.get(url) as req:
-            return await req.json()
-
-
 @app.get("/quotes/", response_model=List[Quote])
-async def quotes_list():
+def quotes_list():
     with Config.SESSION.begin() as session:
         items = [Quote(**x.model_dump()) for x in session.scalars(select(Quote)).all()]
 
-        req1 = await fetch("http://localhost:8001/quotes/")
-        req2 = await fetch("http://localhost:8002/quotes/")
-
-        items.extend(req1)
-
-        items.extend(req2)
         print(f"{items=}")
         return items
 
@@ -109,4 +95,4 @@ if __name__ == "__main__":
     # Config.down()
 
     Config.up()
-    run(app=app, port=8000)
+    run(app=app, port=8002)
